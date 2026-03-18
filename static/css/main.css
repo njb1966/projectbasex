@@ -48,8 +48,19 @@ a:hover { text-decoration: underline; }
   font-size: 1.05em;
   color: var(--text);
   letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .nav-brand:hover { text-decoration: none; color: var(--blue); }
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 
 .nav-actions { display: flex; align-items: center; gap: 16px; }
 

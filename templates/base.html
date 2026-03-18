@@ -9,7 +9,10 @@
 <body>
 
 <nav class="nav">
-  <a href="/" class="nav-brand">ProjectBaseX</a>
+  <a href="/" class="nav-brand">
+    <img src="{{ url_for('static', filename='img/projectbasex-logo1.png') }}" alt="" class="nav-logo">
+    ProjectBaseX
+  </a>
   <div class="nav-actions">
     <a href="/ideas" class="nav-link {% if request.path == '/ideas' %}active-link{% endif %}">Ideas</a>
     <a href="/reports" class="nav-link {% if request.path.startswith('/reports') %}active-link{% endif %}">Reports</a>
