@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}New Project — ProjectBaseX{% endblock %}
+
+{% block content %}
+<div class="breadcrumb" style="margin-bottom: 20px;">
+  <a href="/">Dashboard</a>
+  <span class="breadcrumb-sep">/</span>
+  New Project
+</div>
+
+<div class="form-card">
+  <div class="form-card-title">New Project</div>
+
+  {% if error %}
+  <div class="error-msg">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/projects/new">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="form-group">
+        <label for="name">Project name *</label>
+        <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" placeholder="What are you building?" autofocus>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            {% for c in valid_categories %}
+            <option value="{{ c }}" {% if form.get('category', 'code') == c %}selected{% endif %}>{{ c | title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="status">Starting status</label>
+          <select id="status" name="status">
+            {% for s in valid_statuses %}
+            <option value="{{ s }}" {% if form.get('status', 'idea') == s %}selected{% endif %}>{{ s | status_label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="2" placeholder="One sentence: what is this project?">{{ form.get('description', '') }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="original_plan">What defines "done"?</label>
+        <textarea id="original_plan" name="original_plan" rows="3" placeholder="Describe the end state. This anchors everything.">{{ form.get('original_plan', '') }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="directory_path">Directory path (optional)</label>
+        <input type="text" id="directory_path" name="directory_path" value="{{ form.get('directory_path', '') }}" placeholder="~/Projects/...">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create Project</button>
+        <a href="/" class="btn btn-ghost">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

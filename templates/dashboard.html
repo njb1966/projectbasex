@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ProjectBaseX{% endblock %}
+
+{% block content %}
+
+{# ── Today's Focus ──────────────────────────────────────────────────── #}
+{% if recommendations %}
+<div class="focus-section">
+  <div class="focus-header">
+    <span class="focus-title">Today's Focus</span>
+    <span class="focus-sub">Scored by status priority + staleness</span>
+  </div>
+  <div class="focus-cards">
+    {% for r in recommendations %}
+    <div class="focus-card urgency-{{ r.rec_urgency }}">
+      <div class="focus-card-top">
+        <a href="/projects/{{ r.id }}" class="focus-card-name">{{ r.name }}</a>
+        <span class="focus-urgency-badge urgency-badge-{{ r.rec_urgency }}">{{ r.rec_urgency }}</span>
+      </div>
+      <div class="focus-reason">{{ r.rec_reason }}</div>
+      <div class="focus-card-meta">
+        <span class="badge badge-{{ r.category }}">{{ r.category }}</span>
+        <span class="focus-status">{{ r.status | status_label }}</span>
+        <a href="/projects/{{ r.id }}" class="btn btn-ghost btn-sm" style="margin-left:auto">Open →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Stats Bar ──────────────────────────────────────────────────────── #}
+<div class="stats-bar">
+  {% set stat_map = [
+    ('needs-attention', 'Needs Attention'),
+    ('active',          'Active'),
+    ('planning',        'Planning'),
+    ('idea',            'Ideas'),
+    ('idle-review',     'Idle Review'),
+    ('paused',          'Paused'),
+    ('completed',       'Completed'),
+    ('archived',        'Archived'),
+  ] %}
+  {% for key, label in stat_map %}
+    {% if stats.get(key, 0) > 0 %}
+    <div class="stat-pill sp-{{ key }}">
+      <span class="stat-num">{{ stats.get(key, 0) }}</span>
+      <span class="stat-label">{{ label }}</span>
+    </div>
+    {% endif %}
+  {% endfor %}
+  <div class="stat-pill" style="margin-left: auto;">
+    <span class="stat-num">{{ total }}</span>
+    <span class="stat-label">Total</span>
+  </div>
+</div>
+
+{# ── Lane Macro ─────────────────────────────────────────────────────── #}
+{% macro render_card(p) %}
+<div class="card" data-status="{{ p.status }}" data-id="{{ p.id }}">
+  <div class="card-header">
+    <div class="card-name">
+      <a href="/projects/{{ p.id }}">{{ p.name }}</a>
+    </div>
+    <div class="card-date">{{ p.last_modified | timeago }}</div>
+  </div>
+  {% if p.description %}
+  <div class="card-desc">{{ p.description }}</div>
+  {% endif %}
+  <div class="card-footer">
+    <div class="card-badges">
+      <span class="badge badge-{{ p.category }}">{{ p.category }}</span>
+    </div>
+    <div class="card-actions">
+      <select class="status-select" data-project-id="{{ p.id }}" data-current-status="{{ p.status }}">
+        {% for s in ['idea', 'planning', 'active', 'needs-attention', 'idle-review', 'paused', 'completed', 'archived'] %}
+        <option value="{{ s }}" {% if p.status == s %}selected{% endif %}>{{ s | status_label }}</option>
+        {% endfor %}
+      </select>
+      <a href="/projects/{{ p.id }}" class="btn btn-ghost btn-sm">Open →</a>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro render_list_item(p) %}
+<div class="project-list-item">
+  <span class="badge badge-{{ p.category }}">{{ p.category }}</span>
+  <a href="/projects/{{ p.id }}" class="list-item-name">{{ p.name }}</a>
+  <span class="list-item-date">{{ p.last_modified | timeago }}</span>
+  <div class="list-item-actions">
+    <select class="status-select" data-project-id="{{ p.id }}" data-current-status="{{ p.status }}">
+      {% for s in ['idea', 'planning', 'active', 'needs-attention', 'idle-review', 'paused', 'completed', 'archived'] %}
+      <option value="{{ s }}" {% if p.status == s %}selected{% endif %}>{{ s | status_label }}</option>
+      {% endfor %}
+    </select>
+    <a href="/projects/{{ p.id }}" class="btn btn-ghost btn-sm">Open →</a>
+  </div>
+</div>
+{% endmacro %}
+
+{# ── Needs Attention Lane ───────────────────────────────────────────── #}
+{% if grouped['needs-attention'] %}
+<div class="lane" data-status="needs-attention">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Needs Attention</div>
+    <div class="lane-count">{{ grouped['needs-attention'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="cards-grid">
+      {% for p in grouped['needs-attention'] %}{{ render_card(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Active Lane ────────────────────────────────────────────────────── #}
+{% if grouped['active'] %}
+<div class="lane" data-status="active">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Active</div>
+    <div class="lane-count">{{ grouped['active'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="cards-grid">
+      {% for p in grouped['active'] %}{{ render_card(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Planning Lane ──────────────────────────────────────────────────── #}
+{% if grouped['planning'] %}
+<div class="lane" data-status="planning">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Planning</div>
+    <div class="lane-count">{{ grouped['planning'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="cards-grid">
+      {% for p in grouped['planning'] %}{{ render_card(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Idea Lane ──────────────────────────────────────────────────────── #}
+{% if grouped['idea'] %}
+<div class="lane" data-status="idea">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Ideas</div>
+    <div class="lane-count">{{ grouped['idea'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="cards-grid">
+      {% for p in grouped['idea'] %}{{ render_card(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Idle Review Lane ───────────────────────────────────────────────── #}
+{% if grouped['idle-review'] %}
+<div class="lane" data-status="idle-review">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Idle — Needs Review</div>
+    <div class="lane-count">{{ grouped['idle-review'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="project-list">
+      {% for p in grouped['idle-review'] %}{{ render_list_item(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Paused Lane ────────────────────────────────────────────────────── #}
+{% if grouped['paused'] %}
+<div class="lane" data-status="paused">
+  <div class="lane-header">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Paused</div>
+    <div class="lane-count">{{ grouped['paused'] | length }}</div>
+  </div>
+  <div class="lane-body">
+    <div class="project-list">
+      {% for p in grouped['paused'] %}{{ render_list_item(p) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Completed Lane (collapsed) ─────────────────────────────────────── #}
+{% if grouped['completed'] %}
+<div class="lane collapsed" data-status="completed">
+  <div class="lane-header clickable">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Completed</div>
+    <div class="lane-count">{{ grouped['completed'] | length }}</div>
+    <div class="lane-toggle">▼</div>
+  </div>
+  <div class="lane-body" style="display:none">
+    <table class="collapsed-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Category</th>
+          <th>Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in grouped['completed'] %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td><span class="badge badge-{{ p.category }}">{{ p.category }}</span></td>
+          <td style="color:var(--muted)">{{ p.last_modified | timeago }}</td>
+          <td><a href="/projects/{{ p.id }}" class="btn btn-ghost btn-sm">Open →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{# ── Archived Lane (collapsed) ──────────────────────────────────────── #}
+{% if grouped['archived'] %}
+<div class="lane collapsed" data-status="archived">
+  <div class="lane-header clickable">
+    <div class="lane-dot"></div>
+    <div class="lane-title">Archived</div>
+    <div class="lane-count">{{ grouped['archived'] | length }}</div>
+    <div class="lane-toggle">▼</div>
+  </div>
+  <div class="lane-body" style="display:none">
+    <table class="collapsed-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Category</th>
+          <th>Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in grouped['archived'] %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td><span class="badge badge-{{ p.category }}">{{ p.category }}</span></td>
+          <td style="color:var(--muted)">{{ p.last_modified | timeago }}</td>
+          <td><a href="/projects/{{ p.id }}" class="btn btn-ghost btn-sm">Open →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if total == 0 %}
+<div style="text-align:center; color:var(--muted); padding:60px 0;">
+  <div style="font-size:2em; margin-bottom:12px">📋</div>
+  <div>No projects yet. <a href="/projects/new">Add your first one</a> or run <code>python migrate.py</code> to import existing projects.</div>
+</div>
+{% endif %}
+
+{% endblock %}

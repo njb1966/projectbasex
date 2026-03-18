@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Activity Report — ProjectBaseX{% endblock %}
+
+{% block content %}
+
+<div class="report-header">
+  <div>
+    <h1 class="report-title">Activity Report</h1>
+    <div class="report-sub">Last {{ days }} days</div>
+  </div>
+  <div class="period-toggle">
+    <a href="/reports?period=week"  class="btn {% if period == 'week'  %}btn-primary{% else %}btn-ghost{% endif %}">Week</a>
+    <a href="/reports?period=month" class="btn {% if period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Month</a>
+  </div>
+</div>
+
+{# ── Summary Stats ───────────────────────────────────────────── #}
+<div class="report-stats">
+  <div class="report-stat-card">
+    <div class="report-stat-num">{{ notes | length }}</div>
+    <div class="report-stat-label">Notes Added</div>
+  </div>
+  <div class="report-stat-card">
+    <div class="report-stat-num">{{ events | length }}</div>
+    <div class="report-stat-label">Timeline Events</div>
+  </div>
+  <div class="report-stat-card">
+    <div class="report-stat-num">{{ touched_count }}</div>
+    <div class="report-stat-label">Projects Touched</div>
+  </div>
+  <div class="report-stat-card">
+    <div class="report-stat-num">{{ total_projects }}</div>
+    <div class="report-stat-label">Total Projects</div>
+  </div>
+</div>
+
+<div class="report-body">
+
+  {# ── Portfolio Health ──────────────────────────────────────── #}
+  <div class="report-section">
+    <div class="report-section-title">Portfolio Health</div>
+    <div class="health-bars">
+      {% for h in health %}
+      <div class="health-row">
+        <span class="health-status health-{{ h.status }}">{{ h.status | status_label }}</span>
+        <div class="health-bar-wrap">
+          <div class="health-bar health-bar-{{ h.status }}" style="width: {{ ((h.count / total_projects) * 100) | int }}%"></div>
+        </div>
+        <span class="health-count">{{ h.count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Timeline Events ───────────────────────────────────────── #}
+  {% if events %}
+  <div class="report-section">
+    <div class="report-section-title">Timeline Events</div>
+    <div class="event-list">
+      {% for e in events %}
+      <div class="event-row">
+        <span class="event-type event-type-{{ e.event_type }}">{{ e.event_type | replace('_', ' ') }}</span>
+        <span class="event-project">{{ e.project_name }}</span>
+        <span class="event-desc">{{ e.description }}</span>
+        <span class="event-time">{{ e.timestamp | timeago }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Notes by Project ──────────────────────────────────────── #}
+  {% if notes_by_project %}
+  <div class="report-section">
+    <div class="report-section-title">Notes Added</div>
+    {% for pid, group in notes_by_project.items() %}
+    <div class="note-group">
+      <div class="note-group-name">{{ group.name }}</div>
+      {% for n in group.notes %}
+      <div class="note-group-item">
+        <span class="note-group-time">{{ n.created_date | timeago }}</span>
+        <span class="note-group-content">{{ n.content[:200] }}{% if n.content | length > 200 %}…{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not events and not notes_by_project %}
+  <div style="text-align:center; color:var(--muted); padding:60px 0;">
+    No activity in the last {{ days }} days.
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

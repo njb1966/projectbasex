@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ProjectBaseX{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-brand">ProjectBaseX</a>
+  <div class="nav-actions">
+    <a href="/ideas" class="nav-link {% if request.path == '/ideas' %}active-link{% endif %}">Ideas</a>
+    <a href="/reports" class="nav-link {% if request.path.startswith('/reports') %}active-link{% endif %}">Reports</a>
+    <a href="/projects/new" class="nav-link {% if request.path == '/projects/new' %}active-link{% endif %}">+ Project</a>
+    <button class="btn btn-primary" id="new-idea-btn">+ Idea</button>
+  </div>
+</nav>
+
+<main class="main">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Idea Capture Modal -->
+<div class="modal-overlay" id="idea-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Capture Idea</h3>
+      <button class="modal-close" id="idea-modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="idea-title">Title *</label>
+        <input type="text" id="idea-title" placeholder="What's the idea?">
+      </div>
+      <div class="form-group">
+        <label for="idea-description">Description</label>
+        <textarea id="idea-description" placeholder="Any details..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="idea-sparked">Sparked by</label>
+        <input type="text" id="idea-sparked" placeholder="What triggered this?">
+      </div>
+      <div class="form-group">
+        <label for="idea-project">Related project (optional)</label>
+        <select id="idea-project">
+          <option value="">— none —</option>
+          {% if active_projects is defined %}
+            {% for p in active_projects %}
+              <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="idea-cancel">Cancel</button>
+      <button class="btn btn-primary" id="idea-save">Capture</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

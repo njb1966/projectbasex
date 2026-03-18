@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Ideas — ProjectBaseX{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Ideas</h1>
+    <div style="color:var(--muted); font-size:0.85em; margin-top:4px;">{{ ideas | length }} captured</div>
+  </div>
+  <button class="btn btn-primary" id="new-idea-btn">+ Capture Idea</button>
+</div>
+
+{% if ideas %}
+<div class="ideas-list">
+  {% for idea in ideas %}
+  <div class="idea-item">
+    <div class="idea-item-body">
+      <div class="idea-item-title">{{ idea.title }}</div>
+      {% if idea.description %}
+      <div class="idea-item-desc">{{ idea.description }}</div>
+      {% endif %}
+      {% if idea.sparked_by %}
+      <div class="idea-item-sparked">Sparked by: <span>{{ idea.sparked_by }}</span></div>
+      {% endif %}
+      {% if idea.project_name %}
+      <div style="margin-top:4px; font-size:0.78em; color:var(--muted);">
+        → <a href="/projects/{{ idea.related_project_id }}">{{ idea.project_name }}</a>
+      </div>
+      {% endif %}
+    </div>
+    <div class="idea-item-meta">
+      <span class="badge badge-idea-{{ idea.status }}">{{ idea.status }}</span>
+      <div class="idea-item-date">{{ idea.captured_date | timeago }}</div>
+      <select class="status-select"
+              style="width:auto"
+              onchange="updateIdeaStatus('{{ idea.id }}', this)">
+        {% for s in ['new', 'exploring', 'implemented', 'rejected'] %}
+        <option value="{{ s }}" {% if idea.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="ideas-empty">
+  No ideas captured yet. Hit <strong>+ Capture Idea</strong> whenever inspiration strikes.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function updateIdeaStatus(ideaId, sel) {
+  const newStatus = sel.value;
+  const res = await fetch(`/ideas/${ideaId}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+  });
+  if (res.ok) {
+    const badge = sel.closest('.idea-item-meta').querySelector('.badge');
+    badge.className = `badge badge-idea-${newStatus}`;
+    badge.textContent = newStatus;
+    showToast('Updated');
+  }
+}
+</script>
+{% endblock %}

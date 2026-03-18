@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — ProjectBaseX{% endblock %}
+
+{% block content %}
+
+{# ── Header ─────────────────────────────────────────────────────────── #}
+<div class="detail-header">
+  <div class="breadcrumb">
+    <a href="/">Dashboard</a>
+    <span class="breadcrumb-sep">/</span>
+    {{ project.name }}
+  </div>
+
+  <div class="detail-title-row">
+    <h1 class="detail-title">{{ project.name }}</h1>
+    <span id="status-badge" class="badge badge-status-{{ project.status }}">
+      {{ project.status | status_label }}
+    </span>
+    <span class="badge badge-{{ project.category }}">{{ project.category }}</span>
+  </div>
+
+  <div class="detail-meta">
+    <span class="detail-meta-item">Created <strong>{{ project.created_date | timeago }}</strong></span>
+    <span class="detail-meta-item">Modified <strong>{{ project.last_modified | timeago }}</strong></span>
+    {% if project.priority %}
+    <span class="detail-meta-item">Priority <strong>{{ project.priority }}</strong></span>
+    {% endif %}
+  </div>
+
+  {% if project.directory_path %}
+  <div class="detail-dir">
+    <span>📁</span>
+    <code>{{ project.directory_path }}</code>
+  </div>
+  {% endif %}
+
+  {# Status change ─ inline select + health check #}
+  <div style="margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <span style="font-size:0.82em; color:var(--muted);">Change status:</span>
+    <select id="detail-status-select"
+            class="status-select"
+            data-project-id="{{ project.id }}"
+            data-current-status="{{ project.status }}"
+            style="width: auto;">
+      {% for s in valid_statuses %}
+      <option value="{{ s }}" {% if project.status == s %}selected{% endif %}>{{ s | status_label }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-ghost btn-sm"
+            id="health-check-btn"
+            style="margin-left: 8px;"
+            title="Start an AI review conversation for this project">
+      🩺 Health Check
+    </button>
+  </div>
+</div>
+
+{# ── Tabs ───────────────────────────────────────────────────────────── #}
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="notes">Notes
+    {% if notes %}<span style="color:var(--muted); font-size:0.85em">({{ notes | length }})</span>{% endif %}
+  </button>
+  <button class="tab-btn" data-tab="ai">AI Chat</button>
+  <button class="tab-btn" data-tab="timeline">Timeline</button>
+</div>
+
+{# ── Overview Tab ───────────────────────────────────────────────────── #}
+<div id="tab-overview" class="tab-panel active">
+  <form method="POST" action="/projects/{{ project.id }}/edit">
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>Description</label>
+      <textarea name="description" rows="3" placeholder="What is this project?">{{ project.description or '' }}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>What defines "done"</label>
+      <textarea name="original_plan" rows="4" placeholder="Describe what success looks like for this project...">{{ project.original_plan or '' }}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>Directory path</label>
+      <input type="text" name="directory_path" value="{{ project.directory_path or '' }}" placeholder="~/Projects/...">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>Tech stack <span style="color:var(--muted); font-weight:400">(comma-separated)</span></label>
+      <input type="text" name="tech_stack" value="{{ project.tech_stack | join(', ') }}" placeholder="python, flask, sqlite...">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 16px;">
+      <label>Tags <span style="color:var(--muted); font-weight:400">(comma-separated)</span></label>
+      <input type="text" name="tags" value="{{ project.tags | join(', ') }}" placeholder="bbs, retro, python...">
+    </div>
+
+    <div style="margin-top: 8px;">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+  </form>
+</div>
+
+{# ── Notes Tab ──────────────────────────────────────────────────────── #}
+<div id="tab-notes" class="tab-panel">
+  <div class="add-note-form" style="margin-bottom: 20px;">
+    <textarea id="note-input" placeholder="Add a note... (Ctrl+Enter to save)"></textarea>
+    <div>
+      <button id="add-note-btn" class="btn btn-primary" data-project-id="{{ project.id }}">Add Note</button>
+    </div>
+  </div>
+
+  <div class="notes-list" id="notes-list">
+    {% if notes %}
+      {% for note in notes %}
+      <div class="note-item" data-note-id="{{ note.id }}">
+        <div class="note-date">{{ note.created_date | timeago }}</div>
+        <div class="note-content">{{ note.content }}</div>
+        <button class="note-delete"
+                data-note-id="{{ note.id }}"
+                data-project-id="{{ project.id }}"
+                onclick="deleteNote(this)">✕</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="notes-empty" id="notes-empty">No notes yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── AI Chat Tab ────────────────────────────────────────────────────── #}
+<div id="tab-ai" class="tab-panel">
+  <div class="chat-container">
+
+    {# Mode bar #}
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span id="chat-mode-badge" class="chat-mode-badge mode-general">General</span>
+        <span id="chat-mode-desc" class="chat-mode-desc">Open conversation about this project</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="chat-token-count" style="font-size:0.75em; color:var(--muted);"></span>
+        <button id="chat-new-btn" class="btn btn-ghost btn-sm">New conversation</button>
+      </div>
+    </div>
+
+    {# Mode picker (hidden by default) #}
+    <div id="chat-mode-picker" class="chat-mode-picker" style="display:none">
+      <div class="chat-mode-picker-inner">
+        <div style="font-size:0.85em; color:var(--muted); margin-bottom:10px; font-weight:500;">Start a new conversation in mode:</div>
+        <select id="chat-mode-select" class="status-select" style="width:100%; margin-bottom:12px; font-size:0.9em; padding:8px;">
+          <option value="general">General — open conversation</option>
+          <option value="planning">Planning — build a spec before coding</option>
+          <option value="stuck">Stuck — diagnose a problem</option>
+          <option value="review">Review — honest project assessment</option>
+          <option value="decision">Decision — tradeoff analysis</option>
+        </select>
+        <div style="display:flex; gap:8px;">
+          <button id="chat-mode-confirm" class="btn btn-primary btn-sm">Start</button>
+          <button id="chat-mode-cancel" class="btn btn-ghost btn-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    {# Messages #}
+    <div id="chat-messages" class="chat-messages">
+      <div id="chat-empty" class="chat-empty">
+        <div class="chat-empty-icon">💬</div>
+        <div>No messages yet. Type below to start.</div>
+        <div style="font-size:0.82em; color:var(--muted); margin-top:6px;">
+          Claude has full context: status, description, plan, and recent notes.
+        </div>
+      </div>
+    </div>
+
+    {# Input #}
+    <div class="chat-input-area">
+      <textarea id="chat-input"
+                class="chat-input"
+                placeholder="Ask something... (Ctrl+Enter to send)"
+                rows="3"></textarea>
+      <button id="chat-send-btn" class="btn btn-primary">Send</button>
+    </div>
+
+  </div>
+</div>
+
+{# ── Timeline Tab ───────────────────────────────────────────────────── #}
+<div id="tab-timeline" class="tab-panel">
+  {% set event_icons = {
+    'created':       '✦',
+    'status_change': '⇄',
+    'note_added':    '✎',
+    'milestone':     '◈',
+  } %}
+
+  {% if timeline %}
+  <div class="timeline-list">
+    {% for event in timeline %}
+    <div class="timeline-item">
+      <div class="timeline-icon">{{ event_icons.get(event.event_type, '·') }}</div>
+      <div class="timeline-desc">{{ event.description }}</div>
+      <div class="timeline-time">{{ event.timestamp | timeago }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="notes-empty">No timeline events yet.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script>
+  Chat.init('{{ project.id }}');
+  document.getElementById('health-check-btn').addEventListener('click', () => {
+    Chat.healthCheck('Give me an honest health check of this project. How is it tracking against the original plan? What are the realistic blockers ahead? Should I continue as-is, pivot, pause, or archive?');
+  });
+</script>
+{% endblock %}
