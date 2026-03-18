@@ -42,6 +42,16 @@ def timeago(dt_str):
         return dt_str
 
 
+def _dateformat(dt_str):
+    if not dt_str:
+        return ''
+    try:
+        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+        return dt.strftime('%b %-d, %Y')
+    except Exception:
+        return dt_str
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -57,6 +67,7 @@ def create_app():
 
     app.jinja_env.filters['timeago'] = timeago
     app.jinja_env.filters['status_label'] = lambda s: s.replace('-', ' ').title()
+    app.jinja_env.filters['dateformat'] = _dateformat
 
     return app
 

@@ -83,7 +83,7 @@ def detail(project_id):
         'project_detail.html',
         project=project,
         notes=[dict(n) for n in notes],
-        timeline=[dict(t) for t in timeline],
+        timeline=[_parse_timeline_event(dict(t)) for t in timeline],
         valid_statuses=VALID_STATUSES,
         valid_categories=VALID_CATEGORIES,
     )
@@ -162,6 +162,12 @@ def add_note(project_id):
         )
         db.execute("UPDATE projects SET last_modified = ? WHERE id = ?", (now, project_id))
 
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO timeline (id, project_id, event_type, description, timestamp) VALUES (?, ?, 'note_added', ?, ?)",
+            (str(uuid.uuid4()), project_id, content[:120] + ('…' if len(content) > 120 else ''), now)
+        )
+
     embed_note(project_id, note_id, content)
 
     return jsonify({'id': note_id, 'content': content, 'created_date': now, 'ok': True})
@@ -172,3 +178,25 @@ def delete_note(project_id, note_id):
     with get_db() as db:
         db.execute("DELETE FROM notes WHERE id = ? AND project_id = ?", (note_id, project_id))
     return jsonify({'ok': True})
+
+
+def _parse_timeline_event(event):
+    """Add parsed fields to a timeline event dict for richer template rendering."""
+    if event['event_type'] == 'status_change':
+        desc = event['description']
+        # Format: "Status: old → new" or "Status: old → new (reason)"
+        try:
+            body = desc.replace('Status: ', '')
+            reason = None
+            if ' (' in body and body.endswith(')'):
+                arrow_part, reason = body.rsplit(' (', 1)
+                reason = reason.rstrip(')')
+            else:
+                arrow_part = body
+            parts = arrow_part.split(' → ')
+            event['status_from'] = parts[0].strip() if len(parts) == 2 else None
+            event['status_to']   = parts[1].strip() if len(parts) == 2 else None
+            event['reason']      = reason
+        except Exception:
+            event['status_from'] = event['status_to'] = event['reason'] = None
+    return event

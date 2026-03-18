@@ -183,20 +183,45 @@
 
 {# ── Timeline Tab ───────────────────────────────────────────────────── #}
 <div id="tab-timeline" class="tab-panel">
-  {% set event_icons = {
-    'created':       '✦',
-    'status_change': '⇄',
-    'note_added':    '✎',
-    'milestone':     '◈',
-  } %}
-
   {% if timeline %}
   <div class="timeline-list">
     {% for event in timeline %}
-    <div class="timeline-item">
-      <div class="timeline-icon">{{ event_icons.get(event.event_type, '·') }}</div>
-      <div class="timeline-desc">{{ event.description }}</div>
-      <div class="timeline-time">{{ event.timestamp | timeago }}</div>
+    <div class="timeline-item tl-{{ event.event_type }}">
+
+      {# Left column: node + connector line #}
+      <div class="tl-gutter">
+        <div class="tl-node"></div>
+        {% if not loop.last %}<div class="tl-connector"></div>{% endif %}
+      </div>
+
+      {# Right column: content #}
+      <div class="tl-content">
+        <div class="tl-header">
+          <span class="tl-badge tl-badge-{{ event.event_type }}">
+            {% if event.event_type == 'created' %}Created
+            {% elif event.event_type == 'status_change' %}Status Change
+            {% elif event.event_type == 'note_added' %}Note
+            {% elif event.event_type == 'milestone' %}Milestone
+            {% else %}{{ event.event_type | replace('_', ' ') | title }}
+            {% endif %}
+          </span>
+          <span class="tl-date" title="{{ event.timestamp | dateformat }}">{{ event.timestamp | timeago }}</span>
+        </div>
+
+        {% if event.event_type == 'status_change' and event.status_from and event.status_to %}
+          <div class="tl-status-change">
+            <span class="tl-status-pill tl-status-{{ event.status_from }}">{{ event.status_from | status_label }}</span>
+            <span class="tl-arrow">→</span>
+            <span class="tl-status-pill tl-status-{{ event.status_to }}">{{ event.status_to | status_label }}</span>
+          </div>
+          {% if event.reason %}
+          <div class="tl-reason">{{ event.reason }}</div>
+          {% endif %}
+        {% else %}
+          <div class="tl-desc">{{ event.description }}</div>
+        {% endif %}
+      </div>
+
     </div>
     {% endfor %}
   </div>
