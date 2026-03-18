@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from datetime import datetime, timezone
 from config import Config
 from database import init_db
@@ -68,6 +68,10 @@ def create_app():
     app.jinja_env.filters['timeago'] = timeago
     app.jinja_env.filters['status_label'] = lambda s: s.replace('-', ' ').title()
     app.jinja_env.filters['dateformat'] = _dateformat
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/x-icon')
 
     return app
 
