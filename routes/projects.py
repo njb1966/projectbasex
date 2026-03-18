@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from database import get_db
 from utils.embeddings import embed_note
+from utils.git import get_git_info, get_recent_commits
 
 projects_bp = Blueprint('projects', __name__)
 
@@ -79,6 +80,9 @@ def detail(project_id):
     project['tags'] = json.loads(project.get('tags') or '[]')
     project['tech_stack'] = json.loads(project.get('tech_stack') or '[]')
 
+    git_info    = get_git_info(project.get('directory_path'))
+    git_commits = get_recent_commits(project.get('directory_path'))
+
     return render_template(
         'project_detail.html',
         project=project,
@@ -86,6 +90,8 @@ def detail(project_id):
         timeline=[_parse_timeline_event(dict(t)) for t in timeline],
         valid_statuses=VALID_STATUSES,
         valid_categories=VALID_CATEGORIES,
+        git_info=git_info,
+        git_commits=git_commits,
     )
 
 

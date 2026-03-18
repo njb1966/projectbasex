@@ -70,6 +70,12 @@
   <div class="card-footer">
     <div class="card-badges">
       <span class="badge badge-{{ p.category }}">{{ p.category }}</span>
+      {% set gs = git_status.get(p.id) %}
+      {% if gs == true %}
+        <span class="git-badge git-yes" title="Git repository detected">git</span>
+      {% elif gs == false %}
+        <span class="git-badge git-no" title="Directory set but no git repo found">no git</span>
+      {% endif %}
     </div>
     <div class="card-actions">
       <select class="status-select" data-project-id="{{ p.id }}" data-current-status="{{ p.status }}">
@@ -86,6 +92,12 @@
 {% macro render_list_item(p) %}
 <div class="project-list-item">
   <span class="badge badge-{{ p.category }}">{{ p.category }}</span>
+  {% set gs = git_status.get(p.id) %}
+  {% if gs == true %}
+    <span class="git-badge git-yes" title="Git repository">git</span>
+  {% elif gs == false %}
+    <span class="git-badge git-no" title="No git repo">no git</span>
+  {% endif %}
   <a href="/projects/{{ p.id }}" class="list-item-name">{{ p.name }}</a>
   <span class="list-item-date">{{ p.last_modified | timeago }}</span>
   <div class="list-item-actions">

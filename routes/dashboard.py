@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from database import get_db
 from utils.recommendations import recommend
+from utils.git import is_git_repo
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -27,6 +28,9 @@ def index():
     stats = {s: len(grouped.get(s, [])) for s in STATUSES}
     recommendations = recommend(projects, top_n=3)
 
+    # Fast git check per project (filesystem only, no subprocess)
+    git_status = {p['id']: is_git_repo(p.get('directory_path')) for p in projects}
+
     return render_template(
         'dashboard.html',
         grouped=grouped,
@@ -35,4 +39,5 @@ def index():
         statuses=STATUSES,
         collapsed_by_default=COLLAPSED_BY_DEFAULT,
         recommendations=recommendations,
+        git_status=git_status,
     )

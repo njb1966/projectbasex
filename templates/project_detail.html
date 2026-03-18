@@ -95,6 +95,64 @@
       <button type="submit" class="btn btn-primary">Save Changes</button>
     </div>
   </form>
+
+  {# Git status block #}
+  {% if git_info %}
+  <div class="git-info-block">
+    <div class="git-info-title">
+      {% if git_info.is_git %}
+        <span class="git-badge git-yes">git</span> Repository
+      {% elif git_info.exists %}
+        <span class="git-badge git-no">no git</span>
+        Directory exists but is not a git repository
+      {% else %}
+        <span class="git-badge git-no">missing</span>
+        Directory not found: <code>{{ project.directory_path }}</code>
+      {% endif %}
+    </div>
+
+    {% if git_info.is_git %}
+    <div class="git-info-grid">
+      <div class="git-info-row">
+        <span class="git-info-label">Branch</span>
+        <span class="git-info-value"><code>{{ git_info.branch or 'unknown' }}</code></span>
+      </div>
+      {% if git_info.last_commit_message %}
+      <div class="git-info-row">
+        <span class="git-info-label">Last commit</span>
+        <span class="git-info-value">
+          <code class="git-hash">{{ git_info.last_commit_short }}</code>
+          {{ git_info.last_commit_message }}
+          <span class="git-info-meta">{{ git_info.last_commit_date | timeago }} by {{ git_info.last_commit_author }}</span>
+        </span>
+      </div>
+      {% endif %}
+      {% if git_info.commit_count is not none %}
+      <div class="git-info-row">
+        <span class="git-info-label">Commits</span>
+        <span class="git-info-value">{{ git_info.commit_count }}</span>
+      </div>
+      {% endif %}
+      <div class="git-info-row">
+        <span class="git-info-label">Working tree</span>
+        <span class="git-info-value">
+          {% if git_info.is_dirty %}
+            <span class="git-dirty">Uncommitted changes</span>
+          {% else %}
+            <span class="git-clean">Clean</span>
+          {% endif %}
+        </span>
+      </div>
+      {% if git_info.remote_url %}
+      <div class="git-info-row">
+        <span class="git-info-label">Remote</span>
+        <span class="git-info-value git-info-meta">{{ git_info.remote_url }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 {# ── Notes Tab ──────────────────────────────────────────────────────── #}
@@ -183,7 +241,34 @@
 
 {# ── Timeline Tab ───────────────────────────────────────────────────── #}
 <div id="tab-timeline" class="tab-panel">
+  {% if git_commits %}
+  <div class="git-commits-section">
+    <div class="git-commits-title">Git History <span class="git-commits-count">{{ git_commits | length }} recent commits</span></div>
+    <div class="timeline-list">
+      {% for c in git_commits %}
+      <div class="timeline-item tl-git_commit">
+        <div class="tl-gutter">
+          <div class="tl-node"></div>
+          {% if not loop.last or timeline %}<div class="tl-connector"></div>{% endif %}
+        </div>
+        <div class="tl-content">
+          <div class="tl-header">
+            <span class="tl-badge tl-badge-git_commit">commit</span>
+            <code class="git-hash">{{ c.short_hash }}</code>
+            <span class="tl-date">{{ c.date | timeago }}</span>
+          </div>
+          <div class="tl-desc">{{ c.message }}</div>
+          <div class="tl-reason">{{ c.author }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {% if timeline %}
+  <div {% if git_commits %}class="git-commits-section"{% endif %}>
+    {% if git_commits %}<div class="git-commits-title">Project Events</div>{% endif %}
   <div class="timeline-list">
     {% for event in timeline %}
     <div class="timeline-item tl-{{ event.event_type }}">
@@ -226,6 +311,11 @@
     {% endfor %}
   </div>
   {% else %}
+  <div class="notes-empty">No timeline events yet.</div>
+  {% endif %}
+  {% if git_commits %}</div>{% endif %}
+
+  {% if not timeline and not git_commits %}
   <div class="notes-empty">No timeline events yet.</div>
   {% endif %}
 </div>

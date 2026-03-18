@@ -689,6 +689,7 @@ textarea { resize: vertical; min-height: 80px; }
 .tl-badge-status_change { background: rgba(56,139,253,0.12);  color: var(--blue); }
 .tl-badge-note_added    { background: rgba(188,140,255,0.12); color: var(--purple); }
 .tl-badge-milestone     { background: rgba(210,153,34,0.12);  color: var(--yellow); }
+.tl-badge-git_commit    { background: rgba(99,110,123,0.15);  color: #8b949e; }
 
 .tl-date {
   font-size: 0.75em;
@@ -742,6 +743,113 @@ textarea { resize: vertical; min-height: 80px; }
 .tl-status-paused          { border-color: var(--orange); color: var(--orange); }
 .tl-status-completed       { border-color: var(--green);  color: var(--green); }
 .tl-status-archived        { border-color: var(--muted);  color: var(--muted); }
+
+/* git commit node color */
+.tl-git_commit .tl-node { background: #8b949e; border-color: #8b949e; }
+
+/* ─── Git Badges (dashboard cards + list items) ──────────────── */
+
+.git-badge {
+  font-size: 0.65em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.git-yes { background: rgba(63,185,80,0.12); color: var(--green); }
+.git-no  { background: rgba(248,81,73,0.12); color: var(--red); }
+
+/* ─── Git Info Block (project detail overview) ───────────────── */
+
+.git-info-block {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.git-info-title {
+  font-size: 0.82em;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.git-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.git-info-row {
+  display: flex;
+  gap: 12px;
+  font-size: 0.82em;
+  align-items: baseline;
+}
+
+.git-info-label {
+  width: 100px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.git-info-value {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.git-info-meta {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+.git-hash {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.85em;
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.git-dirty { color: var(--yellow); font-weight: 600; }
+.git-clean { color: var(--green);  font-weight: 600; }
+
+/* ─── Git Commits Section (timeline tab) ─────────────────────── */
+
+.git-commits-section {
+  margin-bottom: 28px;
+}
+
+.git-commits-title {
+  font-size: 0.78em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.git-commits-count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
 
 /* ─── Overview Fields ────────────────────────────────────────── */
 
